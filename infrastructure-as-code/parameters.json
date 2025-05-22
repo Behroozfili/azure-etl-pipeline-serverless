@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "eastus"
+    },
+    "storageAccountName": {
+      "value": "behroozmstorage7718c2ed8"
+    },
+    "functionAppName": {
+      "value": "myfuncapp12345"
+    },
+    "appInsightsName": {
+      "value": "myappinsights12345"
+    },
+    "appServicePlanName": {
+      "value": "myAppServicePlan"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "scriptFile": "__init__.py",
+  "bindings": [
+    {
+      "name": "inputBlob",
+      "type": "blobTrigger",
+      "direction": "in",
+      "path": "datasets/{name}",
+      "connection": "AzureWebJobsStorage"
+    },
+    {
+      "name": "outputBlob",
+      "type": "blob",
+      "direction": "out",
+      "path": "raw-data/{name}",
+      "connection": "AzureWebJobsStorage"
+    },
+    {
+      "name": "outputQueueItem",
+      "type": "queue",
+      "direction": "out",
+      "queueName": "transform-queue",
+      "connection": "AzureWebJobsStorage"
+    }
+  ]
+}
