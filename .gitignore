@@ -1,0 +1,23 @@
+# Environment variables
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+env/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# VSCode
+.vscode/
+
+# Logs
+*.log
+
+# Azure CLI local history (optional)
+.azure/
