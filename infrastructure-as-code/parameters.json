@@ -5,17 +5,56 @@
     "location": {
       "value": "eastus"
     },
-    "storageAccountName": {
-      "value": "behroozmstorage7718c2ed8"
-    },
-    "functionAppName": {
-      "value": "myfuncapp12345"
-    },
-    "appInsightsName": {
-      "value": "myappinsights12345"
-    },
     "appServicePlanName": {
-      "value": "myAppServicePlan"
+      "value": "behETLServicePlan20240521"
+    },
+    "acrName": {
+      "value": "behetlregistry"
+    },
+    "acrUsername": {
+      "value": "behetlregistry"
+    },
+    "acrPassword": {
+      "value": "your_crPassword_WILL_BE_PROVIDED_AT_DEPLOYMENT"
+    },
+    "appInsightsInstrumentationKey": {
+      "value": "your_appInsightsInstrumentationKey_WILL_BE_PROVIDED_AT_DEPLOYMENT"
+    },
+    "storageConnectionString": {
+      "value": "YOUR_STORAGE_CONNECTION_STRING_WILL_BE_PROVIDED_AT_DEPLOYMENT"
+    },
+    "functionsWorkerRuntime": {
+      "value": "python"
+    },
+    "websitesEnableAppServiceStorage": {
+      "value": "false"
+    },
+    "extractFunctionAppName": {
+      "value": "behExtractFunc20240521"
+    },
+    "extractDockerImageBaseName": {
+      "value": "extract-function"
+    },
+    "extractDockerImageTag": {
+      "value": "v1"
+    },
+    "datasetsContainerName": {
+      "value": "datasets"
+    },
+    "rawDataContainerName": {
+      "value": "raw-data"
+    },
+    "transformFunctionAppName": {
+      "value": "behTransformFunc20240521"
+    },
+    "transformDockerImageBaseName": {
+      "value": "transform-function"
+    },
+    "transformDockerImageTag": {
+      "value": "v1"
+    },
+    "transformQueueName": {
+      "value": "transform-queue"
     }
   }
 }

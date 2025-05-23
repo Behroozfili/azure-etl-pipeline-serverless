@@ -17,14 +17,14 @@ else
 fi
 
 # ===================================================================================
-# Sanity check for required environment variables (based on .env and Bicep params)
+# Sanity check for required environment variables
 # ===================================================================================
 echo "Performing sanity check for required environment variables..."
 required_vars=(
   "LOCATION"
   "RESOURCE_GROUP"
-  "STORAGE_ACCOUNT_NAME" # Used for storage operations, not directly by Bicep if connection string is passed
-  "FUNCTION_APP_NAME"
+  "STORAGE_ACCOUNT_NAME"
+  "FUNCTION_APP_NAME"                 # نام فانکشن اپ Extract شما از .env
   "APPINSIGHTS_INSTRUMENTATIONKEY"
   "ACR_NAME"
   "DOCKER_REGISTRY_SERVER_USERNAME"
@@ -32,7 +32,7 @@ required_vars=(
   "STORAGE_CONNECTION_STRING"
   "DATASETS_CONTAINER_NAME"
   "RAW_DATA_CONTAINER_NAME"
-  "TRANSFORM_QUEUE_NAME"
+  "TRANSFORM_QUEUE_NAME"              # main.bicep هنوز این پارامتر را انتظار دارد
   "FUNCTIONS_WORKER_RUNTIME"
   "WEBSITES_ENABLE_APP_SERVICE_STORAGE"
 )
@@ -54,30 +54,33 @@ echo "Sanity check passed."
 # STEP 0: Manual Prerequisite Reminder
 # ===================================================================================
 echo "-----------------------------------------------------------------------------------"
-echo "STEP 0: (Manual Prerequisite) Ensure any conflicting old (e.g., Windows-based) "
-echo "        Function App and App Service Plan are deleted before running this for the first time."
-echo "        Example commands (run MANUALLY if needed, replace 'myOldWindowsPlanName'):"
-echo "          az functionapp delete --name \"$FUNCTION_APP_NAME\" --resource-group \"$RESOURCE_GROUP\""
-echo "          az appservice plan delete --name \"myOldWindowsPlanName\" --resource-group \"$RESOURCE_GROUP\" --yes"
+echo "STEP 0: (Manual Prerequisite) Ensure any conflicting old resources are deleted."
+echo "        Example commands (run MANUALLY if needed, replace with actual old names):"
+echo "          az functionapp delete --name \"myOldFunctionAppName\" --resource-group \"$RESOURCE_GROUP\""
+echo "          az appservice plan delete --name \"myOldAppServicePlanName\" --resource-group \"$RESOURCE_GROUP\" --yes"
 echo "-----------------------------------------------------------------------------------"
 # echo "Pausing for 10 seconds to allow manual review/cancellation..."
 # sleep 10
 
 
 # ===================================================================================
-# STEP 1: Deploy/Update Bicep Infrastructure
+# STEP 1: Deploy/Update Bicep Infrastructure (Focusing on Extract Function)
 # ===================================================================================
-echo "STEP 1: Deploying/Updating Bicep infrastructure..."
+echo "STEP 1: Deploying/Updating Bicep infrastructure (Focusing on Extract Function)..."
 
-# Define names for App Service Plan and App Insights to be used in Bicep
-# These can be static or derived. Ensure they match Bicep parameter expectations.
-# If your Bicep expects these as parameters, define them here or ensure they are in .env
-BICEP_APP_SERVICE_PLAN_NAME="myAppServicePlanB1Linux-${FUNCTION_APP_NAME}" # Example: Make it unique
-BICEP_APP_INSIGHTS_NAME="appinsights-${FUNCTION_APP_NAME}"     # Example: Make it unique
+# Define a name for the App Service Plan.
+# می‌توانید از نام فانکشن اپ اصلی برای ایجاد یک نام منحصر به فرد استفاده کنید یا یک نام ثابت انتخاب کنید.
+BICEP_APP_SERVICE_PLAN_NAME="asp-${FUNCTION_APP_NAME}" # مثال
 
-# Define Docker image details (can also be read from .env if preferred)
-BICEP_DOCKER_IMAGE_BASE_NAME="extract-function"
-BICEP_DOCKER_IMAGE_TAG="v1"
+# Define Docker image details for Extract Function (مطابق با مقادیر قبلی شما)
+BICEP_EXTRACT_DOCKER_IMAGE_BASE_NAME="extract-function"
+BICEP_EXTRACT_DOCKER_IMAGE_TAG="v1"
+
+# مقادیر ساختگی برای پارامترهای Transform Function که main.bicep انتظار دارد
+# از آنجایی که ماژول transform کامنت شده است، این مقادیر منجر به ایجاد منابع transform نمی‌شوند.
+PLACEHOLDER_TRANSFORM_FUNCTION_APP_NAME="placeholder-transform-fn"
+PLACEHOLDER_TRANSFORM_DOCKER_IMAGE_BASE_NAME="placeholder-transform-img"
+PLACEHOLDER_TRANSFORM_DOCKER_IMAGE_TAG="placeholder-v0"
 
 az deployment group create \
   --name "bicep-deploy-$(date +%s)-${FUNCTION_APP_NAME}" \
@@ -85,20 +88,23 @@ az deployment group create \
   --template-file ./infrastructure-as-code/main.bicep \
   --parameters \
     location="$LOCATION" \
-    functionAppName="$FUNCTION_APP_NAME" \
     appServicePlanName="$BICEP_APP_SERVICE_PLAN_NAME" \
-    appInsightsInstrumentationKey="$APPINSIGHTS_INSTRUMENTATIONKEY" \
     acrName="$ACR_NAME" \
     acrUsername="$DOCKER_REGISTRY_SERVER_USERNAME" \
     acrPassword="$DOCKER_REGISTRY_SERVER_PASSWORD" \
-    dockerImageBaseName="$BICEP_DOCKER_IMAGE_BASE_NAME" \
-    dockerImageTag="$BICEP_DOCKER_IMAGE_TAG" \
+    appInsightsInstrumentationKey="$APPINSIGHTS_INSTRUMENTATIONKEY" \
     storageConnectionString="$STORAGE_CONNECTION_STRING" \
-    datasetsContainerName="$DATASETS_CONTAINER_NAME" \
-    rawDataContainerName="$RAW_DATA_CONTAINER_NAME" \
-    transformQueueName="$TRANSFORM_QUEUE_NAME" \
     functionsWorkerRuntime="$FUNCTIONS_WORKER_RUNTIME" \
     websitesEnableAppServiceStorage="$WEBSITES_ENABLE_APP_SERVICE_STORAGE" \
+    extractFunctionAppName="$FUNCTION_APP_NAME" \
+    extractDockerImageBaseName="$BICEP_EXTRACT_DOCKER_IMAGE_BASE_NAME" \
+    extractDockerImageTag="$BICEP_EXTRACT_DOCKER_IMAGE_TAG" \
+    datasetsContainerName="$DATASETS_CONTAINER_NAME" \
+    rawDataContainerName="$RAW_DATA_CONTAINER_NAME" \
+    transformFunctionAppName="$PLACEHOLDER_TRANSFORM_FUNCTION_APP_NAME" \
+    transformDockerImageBaseName="$PLACEHOLDER_TRANSFORM_DOCKER_IMAGE_BASE_NAME" \
+    transformDockerImageTag="$PLACEHOLDER_TRANSFORM_DOCKER_IMAGE_TAG" \
+    transformQueueName="$TRANSFORM_QUEUE_NAME" \
   --debug # Keep --debug for troubleshooting Bicep deployment issues
 
 echo "Bicep deployment finished."
@@ -106,7 +112,7 @@ echo "--------------------------------------------------------------------------
 
 
 # ===================================================================================
-# STEP 2: Docker Image Build and Push
+# STEP 2: Docker Image Build and Push (for Extract Function)
 # ===================================================================================
 echo "STEP 2: Logging into Azure ACR..."
 az acr login --name "$ACR_NAME"
@@ -114,23 +120,24 @@ az acr login --name "$ACR_NAME"
 echo "STEP 3: Getting ACR login server (raw name)..."
 ACR_LOGIN_SERVER_RAW=$(az acr show --name "$ACR_NAME" --resource-group "$RESOURCE_GROUP" --query loginServer --output tsv)
 
-# Construct the full image name, ensuring it matches what Bicep expects
-IMAGE_NAME_TO_BUILD_AND_PUSH="${ACR_LOGIN_SERVER_RAW}/${BICEP_DOCKER_IMAGE_BASE_NAME}:${BICEP_DOCKER_IMAGE_TAG}"
+# Construct the full image name for EXTRACT function
+EXTRACT_IMAGE_NAME_TO_BUILD_AND_PUSH="${ACR_LOGIN_SERVER_RAW}/${BICEP_EXTRACT_DOCKER_IMAGE_BASE_NAME}:${BICEP_EXTRACT_DOCKER_IMAGE_TAG}"
 
-echo "STEP 4: Building Docker image: $IMAGE_NAME_TO_BUILD_AND_PUSH ..."
+echo "STEP 4: Building Docker image for Extract Function: $EXTRACT_IMAGE_NAME_TO_BUILD_AND_PUSH ..."
 # Ensure your Dockerfile is in the './extract_function/' directory relative to this script
-docker build -t "$IMAGE_NAME_TO_BUILD_AND_PUSH" ./extract_function/
+docker build -t "$EXTRACT_IMAGE_NAME_TO_BUILD_AND_PUSH" ./extract_function/
 
-echo "STEP 5: Pushing Docker image to ACR: $IMAGE_NAME_TO_BUILD_AND_PUSH ..."
-docker push "$IMAGE_NAME_TO_BUILD_AND_PUSH"
+echo "STEP 5: Pushing Docker image for Extract Function to ACR: $EXTRACT_IMAGE_NAME_TO_BUILD_AND_PUSH ..."
+docker push "$EXTRACT_IMAGE_NAME_TO_BUILD_AND_PUSH"
 
-echo "Docker image build and push complete."
+echo "Extract Docker image build and push complete."
 echo "-----------------------------------------------------------------------------------"
 
 
 # ===================================================================================
 # STEP 6: Check/Create Storage Account Resources (Containers and Queue)
 # ===================================================================================
+# این بخش بدون تغییر باقی می‌ماند، چون کانتینرها و صف برای فانکشن extract یا آینده لازم هستند.
 echo "STEP 6: Checking and creating Storage Account resources (if needed)..."
 
 echo "Checking if '$RAW_DATA_CONTAINER_NAME' container exists in storage account '$STORAGE_ACCOUNT_NAME'..."
@@ -179,11 +186,12 @@ echo "--------------------------------------------------------------------------
 # Final Message
 # ===================================================================================
 echo "✅ Deployment script finished successfully!"
-echo "   - Bicep infrastructure deployed/updated."
-echo "   - Docker image '$IMAGE_NAME_TO_BUILD_AND_PUSH' pushed to ACR."
+echo "   - Bicep infrastructure deployed/updated (focused on Extract Function)."
+echo "   - Docker image '$EXTRACT_IMAGE_NAME_TO_BUILD_AND_PUSH' pushed to ACR."
 echo "   - Storage resources checked/created."
 echo ""
-echo "Function App URL: https://${FUNCTION_APP_NAME}.azurewebsites.net"
-echo "It might take a few minutes for the Function App to pull the latest image and start."
+echo "Extract Function App URL: https://${FUNCTION_APP_NAME}.azurewebsites.net" # FUNCTION_APP_NAME از .env خوانده می‌شود
+echo ""
+echo "It might take a few minutes for the Extract Function App to pull the latest image and start."
 echo "You can monitor the logs in the Azure Portal (Function App -> Log stream or Container settings)."
 echo "If the app doesn't start, check the 'Container settings' in Azure portal for any pull errors."
