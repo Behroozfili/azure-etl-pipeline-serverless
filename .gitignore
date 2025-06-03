@@ -21,3 +21,4 @@ build/
 
 # Azure CLI local history (optional)
 .azure/
+infrastructure-as-code/parameters.json
