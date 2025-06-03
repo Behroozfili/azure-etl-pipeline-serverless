@@ -1,0 +1,4 @@
+azure-functions
+azure-storage-queue >=12.8.0
+databricks-sdk >=0.20.0
+# Add other dependencies if your __init__.py needs them

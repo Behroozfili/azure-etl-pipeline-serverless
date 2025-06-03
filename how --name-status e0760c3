@@ -1,0 +1,16 @@
+[33me0760c3[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{0}: reset: moving to HEAD
+[33me0760c3[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{1}: commit: feat: Add transform logic for ETL pipeline processing
+[33m66572d5[m HEAD@{2}: rebase (finish): returning to refs/heads/main
+[33m66572d5[m HEAD@{3}: rebase (start): checkout HEAD~2
+[33m619b0e2[m HEAD@{4}: rebase (abort): returning to refs/heads/main
+[33m619b0e2[m HEAD@{5}: rebase (abort): returning to refs/heads/main
+[33m619b0e2[m HEAD@{6}: commit (amend): feat: Implement and deploy complete ETL infrastructure (Extract & Transform) with Databricks integration. Resolve deployment issues and configure Docker builds.
+[33m65b2c78[m HEAD@{7}: commit: feat: Implement and deploy complete ETL infrastructure (Extract & Transform) with Databricks integration. Resolve deployment issues and configure Docker builds.
+[33m22584ec[m HEAD@{8}: commit: feat: Implement and deploy complete ETL infrastructure (Extract & Transform) with Databricks integration. Resolve deployment issues and configure Docker builds.
+[33m66572d5[m HEAD@{9}: commit: Feat: Modularize IaC and add initial transform_function structure
+[33mb84fd3c[m HEAD@{10}: reset: moving to HEAD~1
+[33m6ed94c1[m HEAD@{11}: commit: Feat: Modularize IaC and add initial transform_function structure
+[33mb84fd3c[m HEAD@{12}: rebase (finish): returning to refs/heads/main
+[33mb84fd3c[m HEAD@{13}: commit: Add project files for ETL pipeline, IaC, and deployment script
+[33m198ac4f[m HEAD@{14}: pull --rebase origin main (start): checkout 198ac4faedcffc12bc3c7de1b74ef6284f08b5c1
+[33mabeece6[m HEAD@{15}: commit (initial): Initial commit
