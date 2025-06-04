@@ -1,4 +1,5 @@
 azure-functions
-azure-storage-queue >=12.8.0
-databricks-sdk >=0.20.0
-# Add other dependencies if your __init__.py needs them
+azure-storage-blob>=12.10.0
+# اگر data_transformation_notebook.py شما به کتابخانه‌های دیگری مانند pandas نیاز دارد،
+# آنها را نیز اینجا اضافه کنید. فعلاً برای مثال ساده، لازم نیست.
+# pandas

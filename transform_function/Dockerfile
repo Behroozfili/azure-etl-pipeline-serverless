@@ -1,37 +1,24 @@
-# ./transform_function/Dockerfile
+# 09.transform_function/Dockerfile
+FROM mcr.microsoft.com/azure-functions/python:4-python3.9-slim
 
-# Use the official Python base image for Azure Functions.
-# Make sure the Python version (e.g., python3.9) matches your development and Databricks environment if applicable.
-FROM mcr.microsoft.com/azure-functions/python:4-python3.9
+ENV AzureWebJobsScriptRoot=/home/site/wwwroot/transform_function \
+    AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
+    FUNCTIONS_WORKER_RUNTIME=python \
+    PYTHON_ENABLE_WORKER_EXTENSIONS=1 \
+    # این خط کلیدی است: به پایتون می‌گوید که در /home/site/wwwroot هم به دنبال ماژول‌ها بگردد
+    PYTHONPATH=/home/site/wwwroot
 
-# Set the working directory in the container for the function app.
-WORKDIR /home/site/wwwroot
+# کپی کردن فایل نیازمندی‌ها از پوشه فانکشن مربوطه و نصب آنها
+COPY transform_function/requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
-# Copy the requirements.txt file first to leverage Docker layer caching.
-# If requirements.txt doesn't change, this layer won't be rebuilt.
-COPY transform_function/requirements.txt .
+# کپی کردن کل محتوای build context (که باید ریشه پروژه شما باشد) به /home/site/wwwroot
+# این کار پوشه‌های 09.transform_function و 12.databricks و غیره را شامل می‌شود.
+COPY . /home/site/wwwroot
 
-# Create a virtual environment and install dependencies.
-# This isolates dependencies and is a good practice.
-RUN python -m venv .venv
-# Activate the virtual environment and install packages.
-# Using --no-cache-dir can reduce image size.
-RUN . .venv/bin/activate && pip install --no-cache-dir -r requirements.txt
+# (اختیاری) ایجاد فایل‌های __init__.py خالی اگر لازم باشند و در سورس کنترل نیستند
+# RUN mkdir -p /home/site/wwwroot/12.databricks && touch /home/site/wwwroot/12.databricks/__init__.py
+# RUN mkdir -p /home/site/wwwroot/12.databricks/notebooks && touch /home/site/wwwroot/12.databricks/notebooks/__init__.py
 
-# Copy the rest of the function app code into the working directory.
-COPY transform_function/__init__.py .
-COPY transform_function/function.json .
-# If you have other local Python modules or files used by __init__.py, copy them here.
-# Example: COPY transform_function/my_helper_module.py .
-
-# Azure Functions runtimeStamp settings.
-ENV AzureWebJobsScriptRoot=/home/site/wwwroot
-ENV AzureFunctionsJobHost__Logging__LogLevel__Default=Information
-# Optional: Set the Python path to include the site-packages of the virtual environment.
-# This might be handled by the base image, but can be explicit.
-# ENV PYTHONPATH="/home/site/wwwroot/.venv/lib/python3.9/site-packages:${PYTHONPATH}"
-
-
-# The base image (mcr.microsoft.com/azure-functions/python) handles the CMD instruction
-# to start the Azure Functions host. No need to specify CMD here.
-# EXPOSE 80 (is also handled by the base image if needed)
+# WORKDIR معمولاً لازم نیست به صراحت تنظیم شود اگر AzureWebJobsScriptRoot درست باشد
+# WORKDIR /home/site/wwwroot
