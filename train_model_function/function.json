@@ -2,10 +2,10 @@
   "scriptFile": "__init__.py",
   "bindings": [
     {
-      "name": "msg",
+      "name": "queueMsg",
       "type": "queueTrigger",
       "direction": "in",
-      "queueName": "%LOAD_QUEUE_NAME%",
+      "queueName": "%TrainModelQueueName%",
       "connection": "AzureWebJobsStorage"
     }
   ]

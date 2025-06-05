@@ -1,0 +1,4 @@
+# 11.train_model_function/requirements.txt
+azure-functions
+requests
+python-dotenv 

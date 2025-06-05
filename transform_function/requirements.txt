@@ -1,5 +1,4 @@
+
 azure-functions
-azure-storage-blob>=12.10.0
-# اگر data_transformation_notebook.py شما به کتابخانه‌های دیگری مانند pandas نیاز دارد،
-# آنها را نیز اینجا اضافه کنید. فعلاً برای مثال ساده، لازم نیست.
-# pandas
+azure-storage-blob
+pyspark>=3.3.0,<3.6.0 

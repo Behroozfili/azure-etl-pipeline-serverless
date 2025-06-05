@@ -7,6 +7,13 @@
       "direction": "in",
       "queueName": "%TRANSFORM_QUEUE_NAME%",
       "connection": "AzureWebJobsStorage"
+    },
+    {
+      "name": "loadQueueItem",
+      "type": "queue",
+      "direction": "out",
+      "queueName": "%LOAD_QUEUE_NAME%",
+      "connection": "AzureWebJobsStorage"
     }
   ]
 }

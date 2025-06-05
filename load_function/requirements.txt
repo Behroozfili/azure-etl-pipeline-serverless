@@ -1,1 +1,3 @@
-# requirements.txt
+azure-functions
+azure-storage-blob>=12.10.0
+
