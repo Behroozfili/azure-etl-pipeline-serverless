@@ -1,0 +1,121 @@
+name: Azure Serverless ETL CI/CD
+
+on:
+  push:
+    branches:  
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  PYTHON_VERSION: '3.9'
+  AZURE_RESOURCE_GROUP_NAME: 'your-resource-group-name'
+  AZURE_LOCATION: 'your-azure-location'
+  DATABRICKS_WORKSPACE_URL: 'https://<your-databricks-instance>.azuredatabricks.net'
+  DATABRICKS_NOTEBOOKS_PATH_IN_WORKSPACE: '/Shared/ETL_Pipeline_Notebooks'
+
+jobs:
+  ci_build_and_test:
+    name: Build, Lint and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install root dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint with Flake8
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Install function dependencies and run tests
+        run: |
+          FUNCTIONS_DIRS=("extract_function" "load_function" "train_model_function" "transform_function")
+          for func_dir in "${FUNCTIONS_DIRS[@]}"; do
+            if [ -f "$func_dir/requirements.txt" ]; then
+              pip install -r "$func_dir/requirements.txt"
+            fi
+          done
+          pytest
+
+  deploy_to_azure:
+    name: Deploy to Azure
+    runs-on: ubuntu-latest
+    needs: ci_build_and_test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Bicep Infrastructure
+        uses: azure/arm-deploy@v1
+        with:
+          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          resourceGroupName: ${{ env.AZURE_RESOURCE_GROUP_NAME }}
+          template: ./infrastructure-as-code/main.bicep
+          parameters: ./infrastructure-as-code/parameters.json
+          failOnStdErr: false
+
+      - name: Deploy Extract Function
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ secrets.EXTRACT_FUNCTION_APP_NAME }}
+          package: './extract_function'
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Deploy Load Function
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ secrets.LOAD_FUNCTION_APP_NAME }}
+          package: './load_function'
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Deploy Train Model Function
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ secrets.TRAIN_MODEL_FUNCTION_APP_NAME }}
+          package: './train_model_function'
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Deploy Transform Function
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ secrets.TRANSFORM_FUNCTION_APP_NAME }}
+          package: './transform_function'
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Databricks CLI
+        run: pip install databricks-cli
+
+      - name: Configure Databricks CLI
+        env:
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+        run: |
+          echo "${{ env.DATABRICKS_WORKSPACE_URL }}
+          ${DATABRICKS_TOKEN}" | databricks configure --token
+
+      - name: Deploy Databricks Notebooks
+        run: |
+          databricks workspace import_dir ./databricks/notebooks ${{ env.DATABRICKS_NOTEBOOKS_PATH_IN_WORKSPACE }} --overwrite
